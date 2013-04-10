@@ -1,41 +1,64 @@
 function allowDrop(holder) {
   holder.ondragover = function () { 
-    return false; 
+    return false;
   };
 
   holder.ondragend = function () { 
-    return false; 
+    return false;
   };
 
-  var jstypes = {
-    'javascript': 1,
-    'coffeescript': 1,
-    'coffee': 1,
-    'js' :1
-  },
-  csstypes = {
-    'css': 1,
-    'less': 1,
-    'sass': 1
-  };
+  var jstypes = ['javascript', 'coffeescript', 'coffee', 'js'],
+      csstypes = ['css', 'less', 'sass'],
+      htmltypes = ['html', 'md', 'txt'],
+      allowedtypes = jstypes.concat(csstypes.concat(htmltypes));
 
   holder.ondrop = function (e) {
     e.preventDefault();
 
     var file = e.dataTransfer.files[0],
-        reader = new FileReader();
+        reader = new FileReader(),
+        type = file.type ? file.type.toLowerCase().replace(/^text\//, '') : file.name.toLowerCase().replace(/.*\./g, '');
+
+    console.log(type, allowedtypes.indexOf(type));
+
+    if (type === 'application/zip') {
+      var formData = new FormData();
+      formData.append('zip', file);
+
+      // now post a new XHR request
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/static');
+      xhr.onload = function() {
+        console.log('upload complete');
+      };
+
+      xhr.upload.onprogress = function (event) {
+        if (event.lengthComputable) {
+          var complete = (event.loaded / event.total * 100 | 0);
+          console.log(complete);
+        }
+      };
+
+      xhr.setRequestHeader('X-CSRF-Token', jsbin.state.token);
+
+      xhr.send(formData);
+      return;
+    } else if (allowedtypes.indexOf(type) === -1) {
+      return;
+    }
+
     reader.onload = function (event) {
-      // put JS in the JavaScript panel
-      var type = file.type ? file.type.toLowerCase().replace(/^text\//, '') : file.name.toLowerCase().replace(/.*\./g, ''),
-          panelId = 'html',
+      var panelId = 'html',
           panel = editors[panelId],
           syncCode = event.target.result,
           scroller = null;
 
-      if (jstypes[type]) {
+      if (jstypes.indexOf(type) !== -1) {
         panelId = 'javascript';
-      } else if (csstypes[type]) {
+      } else if (csstypes.indexOf(type) !== -1) {
         panelId = 'css';
+      } else if (htmltypes.indexOf(type) !== -1) {
+        panelId = 'html';
       }
 
       panel = editors[panelId];
@@ -84,4 +107,6 @@ function allowDrop(holder) {
 }
 
 // test for dnd and file api first
-if (!!(window.File && window.FileList && window.FileReader)) allowDrop(document.body);
+if (!!(window.File && window.FileList && window.FileReader)) {
+  allowDrop(document.body);
+}

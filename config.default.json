@@ -40,7 +40,9 @@
     }
   },
   "server": {
-    "logger": "default"
+    "logger": "default",
+    "upload": "/tmp",
+    "useruploads": "/tmp"
   },
   "notify": {
     "errors": [],
