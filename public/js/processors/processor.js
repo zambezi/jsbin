@@ -140,6 +140,49 @@ var processors = jsbin.processors = (function () {
       }
     }),
 
+    choc: createProcessor({
+      id: 'choc',
+      target: 'javascript',
+      extensions: ['choc'], // fake I know...
+      init: function (ready) {
+        $.get(jsbin.static + '/choc.html', function (html) {
+          jsbin.panels.panels.html.setCode(html);
+          ready();
+        });
+      },
+      handler: function (source) {
+        return [
+          "(function() {",
+            "$(document).ready(function() {",
+              "var code, editor, pad;",
+              "code = " + JSON.stringify(source) + ";",
+              "pad = new Two({",
+                "width: 200,",
+                "height: 200,",
+                "type: Two.Types.canvas",
+              "}).appendTo(document.getElementById('canvas'))",,
+              "editor = new window.choc.Editor({",
+                "$: $,",
+                "id: '#choc-editor',",
+                "timeline: true,",
+                "code: code,",
+                "beforeScrub: function() {",
+                  "return pad.clear();",
+                "},",
+                "afterScrub: function() {",
+                  "return pad.update();",
+                "},",
+                "locals: {",
+                  "pad: pad",
+                "}",
+              "});",
+              "return editor.start();",
+            "});",
+          "}).call(this);"
+        ].join('\n');
+      }
+    }),
+
     typescript: createProcessor({
       id: 'typescript',
       target: 'javascript',
