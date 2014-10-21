@@ -167,7 +167,7 @@
 
       if (meta.name) {
         $header.find('.name b').html(meta.name);
-        $header.find('img').attr('src', meta.avatar);
+        $header.find('img').attr('src', meta.avatar || (jsbin['static'] + '/images/default-avatar.min.svg?' + meta.name + '&' + jsbin.version));
         classes.push(meta.name);
       }
 
