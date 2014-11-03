@@ -10,9 +10,15 @@ Cost: £{{#divide plan.amount 100 2}}{{/divide}} per {{plan.interval}} {{#if pla
 Started: {{#stripeTimestampAsDate start "D MMMM, YYYY"}}{{/stripeTimestampAsDate}}
 {{#unless cancel_at_period_end}}Next payment: {{#stripeTimestampAsDate current_period_end "MMM-D, YYYY"}}{{/stripeTimestampAsDate}}{{/unless}}</pre>
 
+  <p><a href="http://jsbin.com/dave/last">Dave</a> loves you <span class="love">&hearts;</span> Thank you.</p>
+
+    <h2>Charges</h2>
+    <pre>{{#each ../charges}}Created: {{stripeTimestampAsDate created "YYYY/MM/DD HH:mm:ss"}}
+Amount: £{{#divide amount 100 2}}{{/divide}} {{#if vat}}(£{{#divide vat 100 2}}+VAT{{/divide}}){{/if}}{{/each}}</pre>
+  </details>
+
 <!-- Your credit card will automatically be charged £{{#divide plan.amount 100 0}}{{/divide}} on {{#stripeTimestampAsDate current_period_end "MMM-D, YYYY"}}{{/stripeTimestampAsDate}} for another {{plan.interval}} of service. -->
 
-  <p><a href="http://jsbin.com/dave/last">Dave</a> loves you <span class="love">&hearts;</span> Thank you.</p>
 
   {{#if cancel_at_period_end}}
   <div class="cancel">
@@ -20,6 +26,30 @@ Started: {{#stripeTimestampAsDate start "D MMMM, YYYY"}}{{/stripeTimestampAsDate
     <p>You cancelled your Pro subscription on {{#stripeTimestampAsDate canceled_at "D MMMM, YYYY"}}{{/stripeTimestampAsDate}}. You'll keep your Pro status until then.</p>
   </div>
   {{else}}
+
+  <details open>
+    <summary>Update your card details</summary>
+
+    <div>
+      <label for="cardnumber">Card details</label>
+      <div class="carddetails">
+        <span class="inputWithImage payment-details-card-number">
+          <b class="icon-credit"></b>
+          <input {{#if values.email}}autofocus{{/if}} id="cardnumber" placeholder="Card number" value="{{values.number}}" type="text" name="number" x-autocompletetype="cc-number" required data-stripe="number">
+        </span>
+        <span class="inputWithImage payment-details-card-date">
+          <b class="icon-calendar-o"></b>
+          <input id="expiry" value="{{values.expiry}}" placeholder="MM / YY" type="text" name="expiry" size="7" required x-autocompletetype="cc-exp" maxlength="9" data-stripe="expiry">
+        </span>
+        <span class="inputWithImage payment-details-card-cvc">
+          <b class="icon-lock"></b>
+          <input id="cvc" placeholder="CVC" value="{{values.cvc}}" type="text" name="cvc" size="4" pattern="\d*" x-autocompletetype="cc-csc" required  autocomplete="off" data-stripe="cvc">
+        </span>
+      </div>
+    </div>
+
+  </details>
+
   <div class="cancel">
     <h3>Cancellation Zone</h3>
     <p>This will disable all your Pro access and disable your warm love for JS Bin.</p>
