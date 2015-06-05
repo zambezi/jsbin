@@ -1,4 +1,7 @@
 var urls = [
+  new Request('/', { credentials: 'include' }),
+  '/js/vendor/jquery-1.11.0.min.js',
+  '/js/vendor/jshint/jshint.min.js',
   '/js/chrome/hashbang-jump.js',
   '/js/vendor/rsvp.js',
   '/js/vendor/jquery-migrate.js',
