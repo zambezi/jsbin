@@ -20,6 +20,14 @@ Amount: £{{#divide amount 100 2}}{{/divide}} {{#if vat}}(£{{#divide vat 100 2}
 <!-- Your credit card will automatically be charged £{{#divide plan.amount 100 0}}{{/divide}} on {{#stripeTimestampAsDate current_period_end "MMM-D, YYYY"}}{{/stripeTimestampAsDate}} for another {{plan.interval}} of service. -->
 
 
+  <div class="invoices">
+    <h3> Invoices </h3>
+    {{#each ../invoices}}
+    <p><a href="/account/invoices/{{id}}">Invoice for {{#stripeTimestampAsDate lines.data.[0].period.start "D MMM, YYYY"}}{{/stripeTimestampAsDate}} - {{#stripeTimestampAsDate lines.data.[0].period.end "D MMM, YYYY"}}{{/stripeTimestampAsDate}}</a></p>
+    {{/each}}
+  </div>
+
+
   {{#if cancel_at_period_end}}
   <div class="cancel">
     <h3>Cancellation Zone</h3>
@@ -73,7 +81,7 @@ Amount: £{{#divide amount 100 2}}{{/divide}} {{#if vat}}(£{{#divide vat 100 2}
   </script>
 
   {{/if}}
-
   {{/subscription}}
+
 </section>
 <script src="{{static}}/js/vendor/jquery-1.11.0.min.js"></script>

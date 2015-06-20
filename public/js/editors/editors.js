@@ -333,7 +333,7 @@ panels.focus = function (panel) {
   }
 }
 
-panels.updateQuery = throttle(function updateQuery() {
+panels.getQuery = function () {
   var alt = {
     javascript: 'js',
     live: 'output'
@@ -341,9 +341,13 @@ panels.updateQuery = throttle(function updateQuery() {
 
   var visible = panels.getVisible();
 
-  var query = visible.map(function (p) {
+  return visible.map(function (p) {
     return alt[p.id] || p.id;
   }).join(',');
+}
+
+panels.updateQuery = throttle(function updateQuery() {
+  var query = panels.getQuery();
 
   if (jsbin.state.code && jsbin.state.owner) {
     $.ajax({
@@ -551,39 +555,6 @@ editors.live.settings.render = function (showAlerts) {
   }
 };
 
-// IMPORTANT this is nasty, but the sequence is important, because the
-// show/hide method is being called as the panels are being called as
-// the panel is setup - so we hook these handlers on *afterwards*.
-// panels.update = function () {
-//   var visiblePanels = panels.getVisible(),
-//       visible = [],
-//       i = 0;
-//   for (i = 0; i < visiblePanels.length; i++) {
-//     visible.push(visiblePanels[i].name);
-//   }
-
-//   if (history.replaceState) {
-//     history.replaceState(null, null, '?' + visible.join(','));
-//   } else {
-//     // :( this will break jquery mobile - but we're talking IE only at this point, right?
-//     location.hash = '#' + visible.join(',');
-//   }
-// }
-
-
-// Panel.prototype._show = Panel.prototype.show;
-// Panel.prototype.show = function () {
-//   this._show.apply(this, arguments);
-//   panels.update();
-// }
-
-// Panel.prototype._hide = Panel.prototype.hide;
-// Panel.prototype.hide = function () {
-//   this._hide.apply(this, arguments);
-//   panels.update();
-// }
-
-
 panels.allEditors = function (fn) {
   var panelId, panel;
   for (panelId in panels.panels) {
@@ -596,40 +567,6 @@ setTimeout(function () {
   panels.restore();
 }, 10);
 panels.focus(panels.getVisible()[0] || null);
-
-// allow panels to be reordered - TODO re-enable
-(function () {
-  return; // disabled for now
-
-  var panelsEl = document.getElementById('panels'),
-      moving = null;
-
-  panelsEl.ondragstart = function (e) {
-    if (e.target.nodeName == 'A') {
-      moving = e.target;
-    } else {
-      return false;
-    }
-  };
-
-  panelsEl.ondragover = function (e) {
-    return false;
-  };
-
-  panelsEl.ondragend = function () {
-    moving = false;
-    return false;
-  };
-
-  panelsEl.ondrop = function (e) {
-    if (moving) {
-
-    }
-    return false;
-  };
-
-});
-
 
 var editorsReady = setInterval(function () {
   var ready = true,
@@ -661,9 +598,6 @@ var editorsReady = setInterval(function () {
     });
 
     clearInterval(editorsReady);
-    // panels.ready = true;
-    // if (typeof editors.onReady == 'function') editors.onReady();
-    // panels.distribute();
 
     // if the console is visible, it'll handle rendering of the output and console
     if (panels.panels.console.visible) {

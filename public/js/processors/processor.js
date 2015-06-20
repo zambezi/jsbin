@@ -114,6 +114,13 @@ var processors = jsbin.processors = (function () {
         source: '',
         result: ''
       };
+
+      if (processorData.target) {
+        if (!jsbin.state.cache) {
+          jsbin.state.cache = {};
+        }
+        jsbin.state.cache[processorData.target] = cache;
+      }
       var proxyCallback = function (source) {
         return new RSVP.Promise(function (resolve, reject) {
           source = source.trim();
@@ -163,7 +170,7 @@ var processors = jsbin.processors = (function () {
       extensions: ['coffee'],
       url: jsbin.static + '/js/vendor/coffee-script.js',
       init: function coffeescript(ready) {
-        getScript(jsbin.static + '/js/vendor/codemirror4/mode/coffeescript/coffeescript.js', ready);
+        getScript(jsbin.static + '/js/vendor/codemirror5/mode/coffeescript/coffeescript.js', ready);
       },
       handler: function (source, resolve, reject) {
         var renderedCode = '';
@@ -215,7 +222,7 @@ var processors = jsbin.processors = (function () {
       extensions: ['ls'],
       url: jsbin.static + '/js/vendor/livescript.js',
       init: function livescript(ready) {
-        getScript(jsbin.static + '/js/vendor/codemirror4/mode/livescript/livescript.js', ready);
+        getScript(jsbin.static + '/js/vendor/codemirror5/mode/livescript/livescript.js', ready);
       },
       handler: function (source, resolve, reject) {
         var renderedCode = '';
@@ -302,7 +309,7 @@ var processors = jsbin.processors = (function () {
       extensions: ['md', 'markdown', 'mdown'],
       url: jsbin.static + '/js/vendor/marked.min.js',
       init: function markdown(ready) {
-        getScript(jsbin.static + '/js/vendor/codemirror4/mode/markdown/markdown.js', ready);
+        getScript(jsbin.static + '/js/vendor/codemirror5/mode/markdown/markdown.js', ready);
       },
       handler: function (source, resolve, reject) {
         try {
@@ -320,7 +327,7 @@ var processors = jsbin.processors = (function () {
       url: jsbin.static + '/js/vendor/processing.min.js',
       init: function (ready) {
         $('#library').val( $('#library').find(':contains("Processing")').val() ).trigger('change');
-        getScript(jsbin.static + '/js/vendor/codemirror4/mode/clike/clike.js', ready);
+        getScript(jsbin.static + '/js/vendor/codemirror5/mode/clike/clike.js', ready);
       },
       handler: function processing(source, resolve, reject) {
         try {
@@ -350,7 +357,7 @@ var processors = jsbin.processors = (function () {
       extensions: ['jade'],
       url: jsbin.static + '/js/vendor/jade.js?1.4.2',
       init: function jade(ready) {
-        getScript(jsbin.static + '/js/vendor/codemirror4/mode/jade/jade.js', ready);
+        getScript(jsbin.static + '/js/vendor/codemirror5/mode/jade/jade.js', ready);
       },
       handler: function jade(source, resolve, reject) {
         try {
@@ -382,7 +389,7 @@ var processors = jsbin.processors = (function () {
       url: jsbin.static + '/js/vendor/less.min.js',
       init: passthrough,
       handler: function less(source, resolve, reject) {
-        window.less.Parser().parse(source, function (error, result) {
+        window.less.render(source, function (error, result) {
           if (error) {
             // index starts at 1
             var line = parseInt(error.line, 10) || 0;
@@ -401,7 +408,7 @@ var processors = jsbin.processors = (function () {
 
             return reject([errors]);
           }
-          resolve(result.toCSS().trim());
+          resolve(result.css.trim());
         });
       }
     }),
@@ -459,7 +466,7 @@ var processors = jsbin.processors = (function () {
       target: 'sass',
       extensions: ['sass'],
       init: function (ready) {
-        getScript(jsbin.static + '/js/vendor/codemirror4/mode/sass/sass.js', ready);
+        getScript(jsbin.static + '/js/vendor/codemirror5/mode/sass/sass.js', ready);
       },
       handler: throttle(debounceAsync(function (source, resolve, reject, done) {
         $.ajax({
@@ -490,6 +497,28 @@ var processors = jsbin.processors = (function () {
           complete: done
         });
       }), 500),
+    }),
+
+    babel: createProcessor({
+      id: 'babel',
+      target: 'js',
+      extensions: ['es6'],
+      url: jsbin.static + '/js/vendor/babel.min.js',
+      init: function (ready) {
+        ready();
+      },
+      handler: function babelhandle(source, resolve, reject) {
+        try {
+          resolve(babel.transform(source, { stage: 0 }).code);
+        } catch (e) {
+          console.error(e.message);
+          reject([{
+            line: e.loc.line - 1,
+            ch: e.loc.column,
+            msg: e.message.split('\n')[0].replace(new RegExp('\\\(' + e.loc.line + ':' + e.loc.column + '\\\)'), '(' + e.loc.column + ')')
+          }]);
+        }
+      }
     }),
 
     myth: createProcessor({
@@ -553,6 +582,53 @@ var processors = jsbin.processors = (function () {
         });
       }
     }),
+
+    clojurescript: createProcessor({
+      id: 'clojurescript',
+      target: 'javascript',
+      extensions: ['clj', 'cljs'],
+      url: "http://himera-emh.herokuapp.com/js/repl.js",
+      //url: "http://192.168.100.128:8080/js/repl.js",
+      init: function clojurescript(ready) {
+        getScript(jsbin.static + '/js/vendor/codemirror5/mode/clojure/clojure.js', ready);
+      },
+      handler: throttle(debounceAsync(function (source, resolve, reject, done) {
+        $.ajax({
+          type: 'post',
+          url: 'http://himera-emh.herokuapp.com/compile-string',
+          //url: "http://192.168.100.128:8080/compile-string",
+          contentType: "application/clojure",
+          data: "{ :expr \"(let [] (ns cljs.user) " + source.replace(/"/g, "\\\"") + ")\" }",
+          success: function (data) {
+            var readstring = cljs.reader.read_string(data);
+            var result = (new cljs.core.Keyword("\uFDD0:js")).call(null, readstring);
+            var clojureError = (new cljs.core.Keyword("\uFDD0:error")).call(null, readstring);
+            if (!clojureError) {
+              resolve(result);
+            } else {
+              var clojureErrors = {
+                line: 0,
+                ch: 0,
+                msg: clojureError
+              };
+              console.log("clojureErrors", clojureErrors);
+              reject([clojureErrors]);
+            }
+          },
+          error: function (data) {
+            var clojureErrors2 = {
+              line: 0,
+              ch: 0,
+              msg: data.responseText
+            };
+            console.log("clojureErrors", clojureErrors2);
+            reject([clojureErrors2]);
+          },
+          complete: done
+        });
+      }), 500),
+    }),
+
 
     traceur: (function () {
       var SourceMapConsumer,

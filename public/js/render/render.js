@@ -1,26 +1,30 @@
 /*globals $, jsbin, editors, RSVP, loopProtect, documentTitle, CodeMirror, hintingDone*/
 
+// quasi polyfill
+if (typeof window.Promise === 'undefined') {
+  window.Promise = RSVP.Promise;
+}
+
 var renderCodeWorking = false;
+function formatErrors(res) {
+  var errors = [];
+  var line = 0;
+  var ch = 0;
+  for (var i = 0; i < res.length; i++) {
+    line = res[i].line || 0;
+    ch = res[i].ch || 0;
+    errors.push({
+      from: CodeMirror.Pos(line, ch),
+      to: CodeMirror.Pos(line, ch),
+      message: res[i].msg,
+      severity: 'error',
+    });
+  }
+  return errors;
+};
 
 var getRenderedCode = function () {
   'use strict';
-
-  var formatErrors = function(res) {
-    var errors = [];
-    var line = 0;
-    var ch = 0;
-    for (var i = 0; i < res.length; i++) {
-      line = res[i].line || 0;
-      ch = res[i].ch || 0;
-      errors.push({
-        from: CodeMirror.Pos(line, ch),
-        to: CodeMirror.Pos(line, ch),
-        message: res[i].msg,
-        severity : 'error'
-      });
-    }
-    return errors;
-  };
 
   if (renderCodeWorking) {
     // cancel existing jobs, and replace with this job
@@ -28,46 +32,65 @@ var getRenderedCode = function () {
 
   renderCodeWorking = true;
 
-  function render(language) {
-    return new RSVP.Promise(function (resolve, reject) {
-      editors[language].render().then(resolve, function (error) {
-        console.warn(editors[language].processor.id + ' processor compilation failed');
-        if (!error) {
-          error = {};
-        }
+  // this allows us to make use of a promise's result instead of recompiling
+  // the language each time
+  var promises = ['html', 'javascript', 'css'].reduce(function (prev, curr) {
+    if (!jsbin.owner() || jsbin.panels.focused && curr === jsbin.panels.focused.id) {
+      getRenderedCode[curr] = getRenderedCode.render(curr);
+    }
+    prev.push(getRenderedCode[curr]);
+    return prev;
+  }, []);
 
-        if ($.isArray(error)) { // then this is for our hinter
-          // console.log(data.errors);
-          var cm = jsbin.panels.panels[language].editor;
+  return Promise.all(promises).then(function (data) {
+    var res = {
+      html: data[0],
+      javascript: data[1],
+      css: data[2],
+    };
+    return res;
+  }).catch(function (e) {
+    // swallow
+  });
+};
 
-          // if we have the error reporting function (called updateLinting)
-          if (typeof cm.updateLinting !== 'undefined') {
-            hintingDone(cm);
-            var err = formatErrors(error);
-            cm.updateLinting(err);
-          } else {
-            // otherwise dump to the console
-            console.warn(error);
-          }
-        } else if (error.message) {
-          console.warn(error.message, error.stack);
+getRenderedCode.render = function render (language) {
+  return new RSVP.Promise(function (resolve, reject) {
+    editors[language].render().then(resolve, function (error) {
+      console.warn(editors[language].processor.id + ' processor compilation failed');
+      if (!error) {
+        error = {};
+      }
+
+      if ($.isArray(error)) { // then this is for our hinter
+        // console.log(data.errors);
+        var cm = jsbin.panels.panels[language].editor;
+
+        // if we have the error reporting function (called updateLinting)
+        if (typeof cm.updateLinting !== 'undefined') {
+          hintingDone(cm);
+          var err = formatErrors(error);
+          cm.updateLinting(err);
         } else {
+          // otherwise dump to the console
           console.warn(error);
         }
+      } else if (error.message) {
+        console.warn(error.message, error.stack);
+      } else {
+        console.warn(error);
+      }
 
-        reject(error);
-      });
+      reject(error);
     });
-  }
-
-  var promises = {
-    html: render('html'),
-    javascript: render('javascript'),
-    css: render('css')
-  };
-
-  return RSVP.hash(promises);
+  });
 };
+
+$(document).on('jsbinReady', function () {
+  getRenderedCode.html = getRenderedCode.render('html');
+  getRenderedCode.javascript = getRenderedCode.render('javascript');
+  getRenderedCode.css = getRenderedCode.render('css');
+});
 
 var getPreparedCode = (function () { // jshint ignore:line
   'use strict';
@@ -84,8 +107,9 @@ var getPreparedCode = (function () { // jshint ignore:line
       script: /<\/script/ig,
       code: /%code%/,
       csscode: /%css%/,
-      title: /<title>(.*)<\/title>/i,
-      description: /<meta.*name=["']description['"].*?>/i,
+
+      description: /(<meta name="description" content=")([^"]*)/im,
+      title: /<title>(.*)<\/title>/im,
       winLoad: /window\.onload\s*=/,
       scriptopen: /<script/gi
     };
@@ -197,7 +221,7 @@ var getPreparedCode = (function () { // jshint ignore:line
         }) + '</pre>';
       } else if (re.csscode.test(html)) {
         html = html.split('%css%').join(css);
-      } else if (css && hasHTML) {
+      } else if (hasHTML) {
         parts = [];
         close = '';
         if (html.indexOf('</head>') !== -1) {
@@ -207,7 +231,13 @@ var getPreparedCode = (function () { // jshint ignore:line
           html = parts[0];
           close = parts.length === 2 && parts[1] ? parts[1] : '';
         }
-        html += '<style>\n' + css + '\n</style>\n' + close;
+
+        // if the focused panel is CSS, then just return the css NOW
+        if (jsbin.state.hasBody && jsbin.panels.focused.id === 'css') {
+          return css;
+        }
+
+        html += '<style id="jsbin-css">\n' + css + '\n</style>\n' + close;
       }
 
       // Add defer to all inline script tags in IE.
@@ -222,25 +252,6 @@ var getPreparedCode = (function () { // jshint ignore:line
             return '<script defer' + match + '>';
           }
         });
-      }
-
-      var description = (html.match(re.description) || [''])[0];
-      if (description) {
-        var i = description.indexOf('content=') + 'content='.length;
-        var quote = description.slice(i, i+1);
-        jsbin.state.description = description.substr(i + 1).replace(new RegExp(quote + '.*$'), '');
-      }
-
-
-      // read the element out of the html code and plug it in to our document.title
-      var newDocTitle = (html.match(re.title) || [,''])[1].trim();
-      if (newDocTitle && newDocTitle !== documentTitle) {
-        jsbin.state.title = documentTitle = newDocTitle; // jshint ignore:line
-        if (documentTitle) {
-          document.title = documentTitle + ' - ' + 'JS Bin';
-        } else {
-          document.title = 'JS Bin';
-        }
       }
 
       return html;

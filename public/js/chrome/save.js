@@ -33,6 +33,34 @@ var saving = {
   }
 };
 
+function getTagContent(tag) {
+  var html = jsbin.panels.panels.html.getCode();
+  var result = '';
+
+  // if we don't have the tag, bail with an empty string
+  if (html.indexOf('<' + tag) === -1) {
+    return result;
+  }
+
+  if (tag !== 'title' && tag !== 'meta') {
+    console.error('getTagContent for ' + tag + ' is not supported');
+    return result;
+  }
+
+  // grab the content based on the earlier defined regexp
+  html.replace(getTagContent.re[tag], function (all, capture1, capture2) {
+    result = tag === 'title' ? capture1 : capture2;
+  });
+
+  return result;
+}
+
+getTagContent.re = {
+  meta: /(<meta name="description" content=")([^"]*)/im,
+  title: /<title>(.*)<\/title>/im
+};
+
+
 // to allow for download button to be introduced via beta feature
 $('a.save').click(function (event) {
   event.preventDefault();
@@ -43,7 +71,10 @@ $('a.save').click(function (event) {
   if (jsbin.saveDisabled === true) {
     ajax = false;
   }
-  saveCode('save', ajax);
+
+  if (jsbin.state.changed || !jsbin.owner()) {
+    saveCode('save', ajax);
+  }
 
   return false;
 });
@@ -113,7 +144,44 @@ $('#sharebintype input[type=radio]').on('click', function () {
   updateSavedState();
 });
 
+var lastHTML = null;
+
+function updateDocMeta(event, data) {
+  if (data) {
+    if (data.panelId !== 'html') {
+      return; // ignore non-html updates
+    }
+  }
+
+  var currentHTML = jsbin.panels.panels.html.getCode();
+  if (lastHTML !== currentHTML) {
+    lastHTML = currentHTML;
+
+    var description = getTagContent('meta');
+    if (description !== jsbin.state.description) {
+      jsbin.state.description = description;
+      jsbin.state.updateSettings({ description: description });
+    }
+
+    var title = getTagContent('title');
+    if (title !== jsbin.state.title) {
+      jsbin.state.title = title;
+      jsbin.state.updateSettings({ title: title });
+
+      documentTitle = title;
+      if (documentTitle) {
+        document.title = documentTitle + ' - ' + jsbin.name;
+      } else {
+        document.title = jsbin.name;
+      }
+    }
+  }
+}
+
+$document.on('saveComplete', updateDocMeta); // update, not create
+
 $document.on('saved', function () {
+  jsbin.state.changed = false;
   updateSavedState();
 
   $('#sharebintype input[type=radio][value="realtime"]').prop('checked', true);
@@ -122,6 +190,8 @@ $document.on('saved', function () {
 
   $('#jsbinurl').attr('href', jsbin.getURL()).removeClass('hidden');
   $('#clone').removeClass('hidden');
+
+  updateDocMeta();
 });
 
 var saveChecksum = jsbin.state.checksum || store.sessionStorage.getItem('checksum') || false;
@@ -172,6 +242,7 @@ if (!jsbin.saveDisabled) {
   };
 
   $document.bind('jsbinReady', function () {
+    jsbin.state.changed = false;
     jsbin.panels.allEditors(function (panel) {
       panel.on('processor', function () {
         // if the url doesn't match the root - i.e. they've actually saved something then save on processor change
@@ -182,6 +253,7 @@ if (!jsbin.saveDisabled) {
     });
 
     $document.bind('codeChange', function (event, data) {
+      jsbin.state.changed = true;
       // savingLabels[data.panelId].text('Saving');
       if (savingLabels[data.panelId]) {
         savingLabels[data.panelId].css({ 'opacity': 0 }).stop(true, true);
@@ -277,6 +349,12 @@ function updateCode(panelId, callback) {
 
   if (jsbin.settings.useCompression) {
     compressKeys('content', data);
+  }
+
+  if (jsbin.state.processors[panelId] &&
+    jsbin.state.processors[panelId] !== panelId &&
+    jsbin.state.cache[panelId]) {
+    data.processed = jsbin.state.cache[panelId].result;
   }
 
   $.ajax({
@@ -384,7 +462,7 @@ function saveCode(method, ajax, ajaxCallback) {
 
   if (ajax) {
     $.ajax({
-      url: $form.attr('action'),
+      url: jsbin.getURL({ withRevision: true }) + '/save',
       data: data,
       dataType: 'json',
       type: 'post',
@@ -407,10 +485,12 @@ function saveCode(method, ajax, ajaxCallback) {
         if (window.history && window.history.pushState) {
           // updateURL(edit);
           var hash = panels.getHighlightLines();
-          if (hash) {hash = '#' + hash;}
+          if (hash) { hash = '#' + hash; }
+          var query = panels.getQuery();
+          if (query) { query = '?' + query; }
           // If split is truthy (> 0) then we are using the revisonless feature
           // this is temporary until we release the feature!
-          window.history.pushState(null, '', jsbin.getURL({withRevision: !split}) + '/edit' + hash);
+          window.history.pushState(null, '', jsbin.getURL({withRevision: !split}) + '/edit' + query + hash);
           store.sessionStorage.setItem('url', jsbin.getURL({withRevision: !split}));
         } else {
           window.location.hash = data.edit;

@@ -131,10 +131,16 @@ function exposeSettings() {
     return results;
   }
 
-  if (isDOM(window.jsbin) || !window.jsbin) { // because...STUPIDITY!!!
+  if (isDOM(window.jsbin) || !window.jsbin || !window.jsbin.version) { // because...STUPIDITY!!!
     window.jsbin = {
+      user: window.jsbin.user,
       'static': jsbin['static'],
       version: jsbin.version,
+      analytics: jsbin.analytics,
+      state: {
+        title: jsbin.state.title,
+        description: jsbin.state.description
+      },
       embed: jsbin.embed,
       panels: {
         // FIXME decide whether this should be locked down further
@@ -161,17 +167,20 @@ function exposeSettings() {
 }
 
 var storedSettings = store.localStorage.getItem('settings');
-if (storedSettings === "undefined") {
+if (storedSettings === "undefined" || jsbin.embed) {
   // yes, equals the *string* "undefined", then something went wrong
   storedSettings = null;
 }
 
-// In all cases localStorage takes precedence over user settings so users can
-// configure it from the console and overwrite the server delivered settings
-jsbin.settings = $.extend({}, jsbin.settings, JSON.parse(storedSettings || '{}'));
-
-if (jsbin.user) {
-  jsbin.settings = $.extend({}, jsbin.user.settings, jsbin.settings);
+if (jsbin.user && jsbin.user.name) {
+  jsbin.settings = $.extend(true, {}, jsbin.user.settings, jsbin.settings);
+  if (jsbin.user.settings.font) {
+    jsbin.settings.font = parseInt(jsbin.user.settings.font, 10);
+  }
+} else {
+  // In all cases localStorage takes precedence over user settings so users can
+  // configure it from the console and overwrite the server delivered settings
+  jsbin.settings = $.extend({}, jsbin.settings, JSON.parse(storedSettings || '{}'));
 }
 
 // if the above code isn't dodgy, this for hellz bells is:
@@ -227,7 +236,8 @@ jsbin.getURL = function (options) {
   if (!options) { options = {}; }
 
   var withoutRoot = options.withoutRoot;
-  var url = withoutRoot ? '' : jsbin.root;
+  var root = options.root || jsbin.root;
+  var url = withoutRoot ? '' : root;
   var state = jsbin.state;
 
   if (state.code) {
@@ -248,6 +258,7 @@ jsbin.state.updateSettings = throttle(function updateBinSettingsInner(update, me
   }
 
   if (jsbin.state.code) {
+    update.checksum = jsbin.state.checksum;
     $.ajax({
       type: method, // consistency ftw :-\
       url: jsbin.getURL({ withRevision: true }) + '/settings',
