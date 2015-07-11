@@ -173,7 +173,7 @@ var getPreparedCode = (function () { // jshint ignore:line
           return escapeMap[m];
         }) + '</pre>';
       } else if (re.code.test(html)) {
-        html = html.split('%code%').join(js);
+        html = html.split('%code%').join(code.javascript);
       } else if (hasJS) {
         close = '';
         if (html.indexOf('</body>') !== -1) {
@@ -225,8 +225,8 @@ var getPreparedCode = (function () { // jshint ignore:line
         parts = [];
         close = '';
         if (html.indexOf('</head>') !== -1) {
-          parts.push(html.substring(0, html.lastIndexOf('</head>')));
-          parts.push(html.substring(html.lastIndexOf('</head>')));
+          parts.push(html.substring(0, html.indexOf('</head>')));
+          parts.push(html.substring(html.indexOf('</head>')));
 
           html = parts[0];
           close = parts.length === 2 && parts[1] ? parts[1] : '';

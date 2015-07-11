@@ -8,6 +8,7 @@ function enableAltUse() {
     jsbin.settings.keys = {};
   }
   jsbin.settings.keys.useAlt = this.checked;
+  settings.save();
 }
 
 $('input.enablealt').attr('checked', customKeys.useAlt ? true : false).change(enableAltUse);
@@ -47,8 +48,8 @@ if (!customKeys.disabled) {
 
     if (event.ctrlKey && $.browser.platform !== 'mac') { event.metaKey = true; }
 
-    if (event.metaKey && event.which === 89) {
-      archive(!event.shiftKey);
+    if (event.metaKey && event.which === 89 && !event.shiftKey) {
+      archive(!jsbin.state.metadata.archive);
       return event.preventDefault();
     }
 
