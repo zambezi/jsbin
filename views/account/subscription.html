@@ -8,80 +8,66 @@
   <pre>Plan: {{plan.name}}{{#if cancel_at_period_end}} (cancelled on {{#stripeTimestampAsDate canceled_at "D MMMM, YYYY"}}{{/stripeTimestampAsDate}}){{/if}}
 Cost: £{{#divide plan.amount 100 2}}{{/divide}} per {{plan.interval}} {{#if plan.vat}}(£{{#divide plan.vat 100 2}}+VAT{{/divide}}){{/if}}
 Started: {{#stripeTimestampAsDate start "D MMMM, YYYY"}}{{/stripeTimestampAsDate}}
-{{#unless cancel_at_period_end}}Next payment: {{#stripeTimestampAsDate current_period_end "MMM-D, YYYY"}}{{/stripeTimestampAsDate}}{{/unless}}</pre>
+{{#unless cancel_at_period_end}}Next payment: {{#stripeTimestampAsDate current_period_end "D MMMM, YYYY"}}{{/stripeTimestampAsDate}}{{/unless}}</pre>
 
-  <p><a href="http://jsbin.com/dave/last">Dave</a> loves you <span class="love">&hearts;</span> Thank you.</p>
+  <p><a target="_blank" href="http://jsbin.com/dave/last">Dave</a> loves you <span class="love">&hearts;</span> Thank you.</p>
 
-    <h2>Charges</h2>
-    <pre>{{#each ../charges}}Created: {{stripeTimestampAsDate created "YYYY/MM/DD HH:mm:ss"}}
-Amount: £{{#divide amount 100 2}}{{/divide}} {{#if vat}}(£{{#divide vat 100 2}}+VAT{{/divide}}){{/if}}{{/each}}</pre>
-  </details>
+  <div id="invoices" class="invoices">
+    <h2>Invoices</h2>
 
-<!-- Your credit card will automatically be charged £{{#divide plan.amount 100 0}}{{/divide}} on {{#stripeTimestampAsDate current_period_end "MMM-D, YYYY"}}{{/stripeTimestampAsDate}} for another {{plan.interval}} of service. -->
+    {{#unless @root.charge.paid}}
+    <div class="payment-errors payment-failure"><h4>{{@root.charge.failure_message}}</h4>
+    <p>Your last invoice failed to take payment. Please update your credit card below to resolve this problem. Or email <a href="mailto:support@jsbin.com">support@jsbin.com</a> if a card update can't resolve the issue.</p>
+    </div>
+    {{/unless}}
 
-
-  <div class="invoices">
-    <h3> Invoices </h3>
+    <div>
     {{#each ../invoices}}
-    <p><a href="/account/invoices/{{id}}">Invoice for {{#stripeTimestampAsDate lines.data.[0].period.start "D MMM, YYYY"}}{{/stripeTimestampAsDate}} - {{#stripeTimestampAsDate lines.data.[0].period.end "D MMM, YYYY"}}{{/stripeTimestampAsDate}}</a></p>
+    <p{{#unless paid}} class="unpaid"{{/unless}}><a href="/account/invoices/{{id}}">Invoice for {{#stripeTimestampAsDate lines.data.[0].period.start "D MMMM, YYYY"}}{{/stripeTimestampAsDate}} - {{#stripeTimestampAsDate lines.data.[0].period.end "D MMMM, YYYY"}}{{/stripeTimestampAsDate}}</a> {{#unless paid}}<abbr class="warning" title="{{@root.charge.failure_message}}">⚠️</abbr>{{/unless}}</p>
     {{/each}}
+    </div>
   </div>
+
+  {{#if @root.charge.failure_message}}
+  <div id="update-card-details" class="payment-details">
+    <h2>Update your card ending in <code>{{@root.card.last4}}</code></h2>
+    <form action="/account/subscription/update-card" method="post" id="update-card">
+      <div class="carddetails">
+        <label for="expiry">Expiry (MM/YY)</label>
+        <span class="inputWithImage payment-details-card-date">
+          <b class="icon-calendar-o"></b>
+          <input id="expiry" value="{{@root.card.exp_month}} / {{@root.card.exp_year}}" placeholder="MM / YY" type="text" name="expiry" size="7" required x-autocompletetype="cc-exp" maxlength="9" data-stripe="expiry">
+        </span>
+        <button>Save updated expiry</button>
+        <input type="hidden" name="_csrf" value="{{@root.csrf}}">
+        <input type="hidden" name="id" value="{{@root.card.id}}">
+      </div>
+    </form>
+  </div>
+  {{/if}}
+
 
 
   {{#if cancel_at_period_end}}
   <div class="cancel">
-    <h3>Cancellation Zone</h3>
+    <h2>Cancellation Zone</h2>
     <p>You cancelled your Pro subscription on {{#stripeTimestampAsDate canceled_at "D MMMM, YYYY"}}{{/stripeTimestampAsDate}}. You'll keep your Pro status until then.</p>
   </div>
   {{else}}
-
-  <details open>
-    <summary>Update your card details</summary>
-
-    <div>
-      <label for="cardnumber">Card details</label>
-      <div class="carddetails">
-        <span class="inputWithImage payment-details-card-number">
-          <b class="icon-credit"></b>
-          <input {{#if values.email}}autofocus{{/if}} id="cardnumber" placeholder="Card number" value="{{values.number}}" type="text" name="number" x-autocompletetype="cc-number" required data-stripe="number">
-        </span>
-        <span class="inputWithImage payment-details-card-date">
-          <b class="icon-calendar-o"></b>
-          <input id="expiry" value="{{values.expiry}}" placeholder="MM / YY" type="text" name="expiry" size="7" required x-autocompletetype="cc-exp" maxlength="9" data-stripe="expiry">
-        </span>
-        <span class="inputWithImage payment-details-card-cvc">
-          <b class="icon-lock"></b>
-          <input id="cvc" placeholder="CVC" value="{{values.cvc}}" type="text" name="cvc" size="4" pattern="\d*" x-autocompletetype="cc-csc" required  autocomplete="off" data-stripe="cvc">
-        </span>
-      </div>
-    </div>
-
-  </details>
-
   <div class="cancel">
     <h3>Cancellation Zone</h3>
     <p>This will disable all your Pro access and disable your warm love for JS Bin.</p>
     <p>If you do cancel, your Pro status will remain active until {{#stripeTimestampAsDate current_period_end "D MMMM, YYYY"}}{{/stripeTimestampAsDate}}, when your subscription will not be renewed.</p>
     <form id="cancel" method="post" action="/account/subscription/cancel">
       <input type="hidden" name="subscription" value="{{id}}">
-      <input type="hidden" name="_csrf" value="{{../../csrf}}">
+      <input type="hidden" name="_csrf" value="{{@root.csrf}}">
       <button>Cancel my subscription</button>
     </form>
   </div>
-
-  <script>
-  document.getElementById('cancel').onsubmit = function (event) {
-    event = event || window.event;
-    var result = prompt("Enter your username to confirm the cancellation\n(it's \"{{../../username}}\" by the way).\n\nWe'll miss you :(");
-    if (!result || (result.toLowerCase().trim() !== '{{../../username}}'.toLowerCase())) {
-      if (event.preventDefault) event.preventDefault();
-      return false;
-    }
-  };
-  </script>
-
   {{/if}}
   {{/subscription}}
 
 </section>
 <script src="{{static}}/js/vendor/jquery-1.11.0.min.js"></script>
+<script src="{{static}}/js/vendor/jquery.payment.js{{cacheBust}}"></script>
+<script src="{{static}}/js/account/subscription.js{{cachebust}}"></script>
