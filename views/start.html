@@ -1,2 +1,8 @@
-{{#if production}}start({{{template}}}, {{{jsbin}}}, this, document);{{else}}window.template = {{{template}}};
-window.jsbin = {{{jsbin}}};{{/if}}
+{{~#if ajax~}}
+{ "state": {{{jsbin}}}, "template":{{{template}}} }
+{{else}}{{#if production}}
+start({{{template}}}, {{{jsbin}}}, this, document);
+{{else}}
+window.template = {{{template}}};
+window.jsbin = {{{jsbin}}};
+{{/if}}{{/if}}
