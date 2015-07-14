@@ -86,7 +86,7 @@ getRenderedCode.render = function render (language) {
   });
 };
 
-$(document).on('jsbinReady', function () {
+$(document).on('jsbinReady refreshCode', function () {
   getRenderedCode.html = getRenderedCode.render('html');
   getRenderedCode.javascript = getRenderedCode.render('javascript');
   getRenderedCode.css = getRenderedCode.render('css');

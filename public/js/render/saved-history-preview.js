@@ -131,7 +131,7 @@
     var selected = null;
     $bins.delegate('a', 'click', function (event) {
       if (event.shiftKey || event.metaKey) { return; }
-      
+
       var $this = $(this);
 
       if ($this.closest('.action').length) {
@@ -154,7 +154,15 @@
       var url = jsbin.root + data.url;
 
       if (selected === this) {
-        window.location = data.editUrl;
+        // window.location = data.editUrl;
+        window.history.pushState(null, null, data.editUrl);
+        $.ajax({
+          url: url + '/start.json',
+          dataType: 'json',
+          success: function (res) {
+            load(res.state, res.template);
+          },
+        });
       } else {
         $trs.removeClass('selected');
         $tr.addClass('selected');
