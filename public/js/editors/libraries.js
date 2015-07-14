@@ -115,8 +115,8 @@ var libraries = [
   {
     'url': [
       'https://code.jquery.com/jquery.min.js',
-      'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css',
-      'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js'
+      'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css',
+      'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js'
     ],
     'label': 'Bootstrap Latest',
     'group': 'Bootstrap'
@@ -227,40 +227,22 @@ var libraries = [
   },
   {
     'url': [
-      'https://da7xgjtj801h2.cloudfront.net/2014.2.716/styles/kendo.common.min.css',
-      'https://da7xgjtj801h2.cloudfront.net/2014.2.716/styles/kendo.default.min.css',
-      'https://code.jquery.com/jquery-1.9.1.min.js',
-      'https://da7xgjtj801h2.cloudfront.net/2014.2.716/js/kendo.ui.core.min.js'
+      'https://da7xgjtj801h2.cloudfront.net/2015.2.624/styles/kendo.common.min.css',
+      'https://da7xgjtj801h2.cloudfront.net/2015.2.624/styles/kendo.silver.min.css',
+      'https://code.jquery.com/jquery-2.1.4.min.js',
+      'https://da7xgjtj801h2.cloudfront.net/2015.2.624/js/kendo.ui.core.min.js'
     ],
-    'label': 'Kendo UI Core 2014.Q2',
+    'label': 'Kendo UI Core 2015.2.624',
     'group': 'Kendo UI'
   },
   {
     'url': [
-      'https://da7xgjtj801h2.cloudfront.net/2014.2.716/styles/kendo.common.min.css',
-      'https://da7xgjtj801h2.cloudfront.net/2014.2.716/styles/kendo.rtl.min.css',
-      'https://da7xgjtj801h2.cloudfront.net/2014.2.716/styles/kendo.default.min.css',
-      'https://da7xgjtj801h2.cloudfront.net/2014.2.716/styles/kendo.dataviz.min.css',
-      'https://da7xgjtj801h2.cloudfront.net/2014.2.716/styles/kendo.dataviz.default.min.css',
-      'https://da7xgjtj801h2.cloudfront.net/2014.2.716/styles/kendo.mobile.all.min.css',
+      'https://da7xgjtj801h2.cloudfront.net/2014.3.1411/styles/kendo.common.min.css',
+      'https://da7xgjtj801h2.cloudfront.net/2014.3.1411/styles/kendo.default.min.css',
       'https://code.jquery.com/jquery-1.9.1.min.js',
-      'https://da7xgjtj801h2.cloudfront.net/2014.2.716/js/kendo.all.min.js'
+      'https://da7xgjtj801h2.cloudfront.net/2014.3.1411/js/kendo.ui.core.min.js'
     ],
-    'label': 'Kendo UI 2014.Q2',
-    'group': 'Kendo UI'
-  },
-  {
-    'url': [
-      'https://da7xgjtj801h2.cloudfront.net/2014.1.318/styles/kendo.common.min.css',
-      'https://da7xgjtj801h2.cloudfront.net/2014.1.318/styles/kendo.rtl.min.css',
-      'https://da7xgjtj801h2.cloudfront.net/2014.1.318/styles/kendo.default.min.css',
-      'https://da7xgjtj801h2.cloudfront.net/2014.1.318/styles/kendo.dataviz.min.css',
-      'https://da7xgjtj801h2.cloudfront.net/2014.1.318/styles/kendo.dataviz.default.min.css',
-      'https://da7xgjtj801h2.cloudfront.net/2014.1.318/styles/kendo.mobile.all.min.css',
-      'https://code.jquery.com/jquery-1.9.1.min.js',
-      'https://da7xgjtj801h2.cloudfront.net/2014.1.318/js/kendo.all.min.js'
-    ],
-    'label': 'Kendo UI 2014.Q1',
+    'label': 'Kendo UI Core 2014.3.1411',
     'group': 'Kendo UI'
   },
   {
@@ -311,6 +293,46 @@ var libraries = [
   {
     'url': 'https://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js',
     'label': 'Angular 1.2.26 Legacy',
+    'group': 'Angular'
+  },
+  {
+    'url':'https://rawgit.com/angular/bower-angular/master/angular.min.js',
+    'label': 'Angular Latest',
+    'group': 'Angular'
+  },
+  {
+    'url': 'https://rawgit.com/angular/bower-angular/master/angular.js',
+    'label': 'Angular Latest Uncompressed',
+    'group': 'Angular'
+  },
+  {
+    'url': 'https://rawgit.com/angular/bower-angular-animate/master/angular-animate.min.js',
+    'label': 'Angular Animate Latest',
+    'group': 'Angular'
+  },
+  {
+    'url': 'https://rawgit.com/angular/bower-angular-aria/master/angular-aria.min.js',
+    'label': 'Angular Aria Latest',
+    'group': 'Angular'
+  },
+  {
+    'url': 'https://rawgit.com/angular/bower-angular-messages/master/angular-messages.min.js',
+    'label': 'Angular Messages Latest',
+    'group': 'Angular'
+  },
+  {
+    'url': 'https://rawgit.com/angular/bower-angular-resource/master/angular-resource.min.js',
+    'label': 'Angular Resource Latest',
+    'group': 'Angular'
+  },
+  {
+    'url': 'https://rawgit.com/angular/bower-angular-route/master/angular-route.min.js',
+    'label': 'Angular Route Latest',
+    'group': 'Angular'
+  },
+  {
+    'url': 'https://rawgit.com/angular/bower-angular-sanitize/master/angular-sanitize.min.js',
+    'label': 'Angular Sanitize Latest',
     'group': 'Angular'
   },
   {
@@ -414,15 +436,15 @@ var libraries = [
   {
     'url': [
       'https://code.jquery.com/jquery-1.11.1.min.js',
-      '//builds.emberjs.com/tags/v1.11.3/ember-template-compiler.js',
-      '//builds.emberjs.com/tags/v1.11.3/ember.debug.js'
+      '//builds.emberjs.com/tags/v1.13.2/ember-template-compiler.js',
+      '//builds.emberjs.com/tags/v1.13.2/ember.debug.js'
     ],
-    'label': 'Ember.js 1.11.3',
+    'label': 'Ember.js 1.13.2',
     'group': 'Ember'
   },
   {
-    'url': '//builds.emberjs.com/tags/v1.0.0-beta.16.1/ember-data.js',
-    'label': 'Ember Data 1.0.0-beta.16.1',
+    'url': '//builds.emberjs.com/tags/v1.13.2/ember-data.js',
+    'label': 'Ember Data 1.13.4',
     'group': 'Ember'
   },
   {
@@ -632,6 +654,16 @@ var libraries = [
     'label': 'Popcorn.js 1.5.6 (Core + Extensions)',
     'group': 'Popcorn.js'
   },
+  {
+    'url': 'https://cdnjs.cloudflare.com/ajax/libs/immutable/3.7.3/immutable.min.js',
+    'label': 'Immutable 3.7.3',
+    'group': 'Data structures'
+  },
+  {
+    'url': 'https://cdnjs.cloudflare.com/ajax/libs/mori/0.3.2/mori.js',
+    'label': 'mori 0.3.2',
+    'group': 'Data structures'
+  }
 ];
 
 window.libraries = libraries; // expose a command line API
