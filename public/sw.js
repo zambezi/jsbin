@@ -5,7 +5,7 @@
 importScripts('/js/offline/cache/index.js');
 importScripts('/js/offline/urls.js');
 
-var CACHE_NAME = 'jsbin-v3.3';
+var CACHE_NAME = 'jsbin-v3.5';
 
 function log() {
   var args = [].slice.call(arguments);

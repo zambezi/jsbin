@@ -69,6 +69,7 @@ var urls = [
   '/js/chrome/archive.js',
   '/js/chrome/welcome-panel.js',
   '/js/chrome/help-search.js',
+  '/js/chrome/load.js',
   '/js/chrome/app.js',
   '/css/style.css',
   '/css/flat-ui.css',
