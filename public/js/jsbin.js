@@ -1,3 +1,4 @@
+/*globals jQuery, $, jsbin, store */
 try {
   console.log('Dave is ready.');
 } catch (e) {
@@ -239,6 +240,12 @@ jsbin.getURL = function (options) {
   var url = withoutRoot ? '' : root;
   var state = jsbin.state;
 
+  var pathCode = window.location.pathname.split('/').slice(0, 2).join('');
+  var pathRev = parseInt(window.location.pathname.split('/').slice(1, 2), 10);
+  if (isNaN(pathRev)) {
+    pathRev = '';
+  }
+
   if (state.code) {
     url += '/' + state.code;
 
@@ -247,9 +254,18 @@ jsbin.getURL = function (options) {
         url += '/' + (state.revision || 1);
       }
     }
+  } else if (pathCode) {
+    url += '/' + pathCode;
+    if (pathRev || options.withRevision) {
+      url += '/' + (pathRev || 1);
+    }
   }
-  return url;
+  return url || '/';
 };
+
+if (!jsbin.state) {
+  jsbin.state = {};
+}
 
 jsbin.state.updateSettings = throttle(function updateBinSettingsInner(update, method) {
   if (!method) {

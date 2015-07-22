@@ -556,7 +556,8 @@ function populateEditor(editor, panel) {
     var cached = store.sessionStorage.getItem('jsbin.content.' + panel), // session code
         saved = jsbin.embed ? null : store.localStorage.getItem('saved-' + panel), // user template
         sessionURL = store.sessionStorage.getItem('url'),
-        changed = false;
+        changed = false,
+        t = typeof template === 'undefined' ? {} : template;
 
     // if we clone the bin, there will be a checksum on the state object
     // which means we happily have write access to the bin
@@ -566,21 +567,21 @@ function populateEditor(editor, panel) {
       saveChecksum = false;
     }
 
-    if (template && cached == template[panel]) { // restored from original saved
+    if (t && cached == t[panel]) { // restored from original saved
       editor.setCode(cached);
-    } else if (cached && sessionURL == jsbin.getURL() && sessionURL !== jsbin.root) { // try to restore the session first - only if it matches this url
+    } else if (cached && sessionURL == jsbin.getURL() && (sessionURL !== jsbin.root || !jsbin.state.offline)) { // try to restore the session first - only if it matches this url
       editor.setCode(cached);
       // tell the document that it's currently being edited, but check that it doesn't match the saved template
       // because sessionStorage gets set on a reload
-      changed = cached != saved && cached != template[panel];
-    } else if (!template.post && saved !== null && !/(edit|embed)$/.test(window.location) && !window.location.search) { // then their saved preference
+      changed = cached != saved && cached != t[panel];
+    } else if (!t.post && saved !== null && !/(edit|embed)$/.test(window.location) && !window.location.search) { // then their saved preference
       editor.setCode(saved);
       var processor = JSON.parse(store.localStorage.getItem('saved-processors') || '{}')[panel];
       if (processor) {
         jsbin.processors.set(jsbin.panels.panels[panel], processor);
       }
     } else { // otherwise fall back on the JS Bin default
-      editor.setCode(template[panel]);
+      editor.setCode(t[panel]);
     }
 
     if (editor.editor && editor.editor.clearHistory) {

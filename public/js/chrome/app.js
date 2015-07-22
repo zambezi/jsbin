@@ -33,6 +33,8 @@ if (CodeMirror.keyMap && CodeMirror.keyMap['default']) {
   delete CodeMirror.keyMap['default'][cmd + '-R'];
 }
 
+loadUser(jsbin.user || JSON.parse(localStorage.getItem('jsbin.user') || 'null'));
+
 // var link = document.createElement('link');
 // link.rel = 'stylesheet';
 // link.href = jsbin['static'] + '/css/font.css?' + jsbin.version;
@@ -42,3 +44,11 @@ if (CodeMirror.keyMap && CodeMirror.keyMap['default']) {
 if (jsbin.embed) {
   analytics.embed();
 }
+
+$.ajax({
+  dataType: 'json',
+  url: jsbin.getURL() + '/start.json',
+  success: function (res) {
+    load(res.state, res.template);
+  },
+})

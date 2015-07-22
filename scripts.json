@@ -2,6 +2,7 @@
   "app": [
     "/js/offline/index.js",
     "/js/chrome/hashbang-jump.js",
+    "/js/vendor/undefsafe.js",
     "/js/chrome/font.js",
     "/js/vendor/rsvp.js",
     "/js/vendor/jquery-migrate.js",
@@ -70,6 +71,7 @@
     "/js/chrome/welcome-panel.js",
     "/js/chrome/help-search.js",
     "/js/chrome/load.js",
+    "/js/account/loaduser.js",
     "/js/chrome/app.js"
   ],
   "runner": [

@@ -643,10 +643,14 @@ function upgradeConsolePanel(console) {
         $('#runconsole')[this.visible ? 'hide' : 'show']();
       };
 
-      jsbin.panels.panels.live.on('show', hidebutton).on('hide', hidebutton);
+      var live = undefsafe(jsbin, 'panels.panels.live');
 
-      if (jsbin.panels.panels.live.visible) {
-        $('#runconsole').hide();
+      if (live) {
+        live.on('show', hidebutton).on('hide', hidebutton);
+
+        if (jsbin.panels.panels.live.visible) {
+          $('#runconsole').hide();
+        }
       }
 
     });

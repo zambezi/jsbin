@@ -139,7 +139,7 @@ function opendropdown(el) {
 function closedropdown() {
   menuDown = false;
   if (dropdownOpen) {
-    dropdownButtons.closest('.menu').removeClass('open').trigger('close');
+    dropdownButtons.find('.menu').removeClass('open').trigger('close');
     // $body.removeClass('menuinfo');
     dropdownOpen = false;
     onhover = false;
@@ -153,7 +153,7 @@ function closedropdown() {
   }
 }
 
-var dropdownButtons = $('.button-dropdown, .button-open').mousedown(function (e) {
+var dropdownButtons = $('#control').on('mousedown', '.button-dropdown, .button-open', function (e) {
   $dropdownLinks.removeClass('hover');
   if (dropdownOpen && dropdownOpen !== this) {
     closedropdown();
@@ -164,9 +164,9 @@ var dropdownButtons = $('.button-dropdown, .button-open').mousedown(function (e)
   }
   e.preventDefault();
   return false;
-}).mouseup(function () {
+}).on('mouseup', '.button-dropdown, .button-open', function () {
   if (menuDown) return false;
-}).click(function () {
+}).on('click', '.button-dropdown, .button-open', function () {
   if (!menuDown) {
     analytics.closeMenu(this.hash.substring(1));
     closedropdown();

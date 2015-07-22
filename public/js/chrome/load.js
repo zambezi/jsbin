@@ -5,7 +5,7 @@ function load(state, template) {
   var token = jsbin.state.token;
   var old = jsbin.saveDisabled;
   jsbin.saveDisabled = true; // whilst we populate
-  jsbin.state = state;
+  $.extend(jsbin.state, state);
   saveChecksum = null;
   var promises = [];
   jsbin.panels.allEditors(function (panel) {
