@@ -257,48 +257,38 @@ var processors = jsbin.processors = (function () {
       url: jsbin.static + '/js/vendor/typescript.min.js',
       init: passthrough,
       handler: function typescript(source, resolve, reject) {
-        var noop = function () {};
-        var outfile = {
-          source: '',
-          Write: function (s) {
-            this.source += s;
+
+        var result = ts.transpileModule(source, {
+          compilerOptions: {
+            inlineSourceMap: true,
+            inlineSources: true,
+            target: ts.ScriptTarget.ES5
           },
-          WriteLine: function (s) {
-            this.source += s + '\n';
-          },
-          Close: noop
-        };
-
-        var outerr = {
-          Write: noop,
-          WriteLine: noop,
-          Close: noop
-        };
-
-        var parseErrors = [];
-
-        var compiler = new window.TypeScript.TypeScriptCompiler(outfile, outerr);
-
-        compiler.setErrorCallback(function (start, len, message) {
-          parseErrors.push({ start: start, len: len, message: message });
+          fileName: 'jsbin.ts',
+          reportDiagnostics: true
         });
-        compiler.parser.errorRecovery = true;
 
-        compiler.addUnit(source, 'jsbin.ts');
-        compiler.typeCheck();
-        compiler.reTypeCheck();
-        compiler.emit();
+        /**
+         *  TypeScript is complaining about the `isolateModules` setting, which
+         *  is meant to ignore import statements. We don't want to show that to
+         *  the user, so we just filter it out.
+         */
+        var diagnostics = result.diagnostics.filter(function(error){
+          return error.code !== 5047;
+        });
 
-        for (var i = 0, len = parseErrors.length; i < len; i++) {
-          console.log('Error Message: ' + parseErrors[i].message);
-          console.log('Error Start: ' + parseErrors[i].start);
-          console.log('Error Length: ' + parseErrors[i].len);
-        }
-
-        if (parseErrors.length) {
-          reject();
+        if (diagnostics.length) {
+          reject(diagnostics.map(function(diagnostic){
+            var position  = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+            var line = position.line + 1;
+            var character = position.character + 1;
+            var message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+            var code = source.substr(diagnostic.start, diagnostic.length);
+            return message + (code ? ' at ' + code : '') +
+              ' (' + diagnostic.file.fileName + ':'+line+':'+character+')';
+          }).join('\n'));
         } else {
-          resolve(outfile.source);
+          resolve(result.outputText);
         }
       }
     }),
@@ -583,52 +573,80 @@ var processors = jsbin.processors = (function () {
       }
     }),
 
-    clojurescript: createProcessor({
-      id: 'clojurescript',
-      target: 'javascript',
-      extensions: ['clj', 'cljs'],
-      url: "http://himera-emh.herokuapp.com/js/repl.js",
-      //url: "http://192.168.100.128:8080/js/repl.js",
-      init: function clojurescript(ready) {
-        getScript(jsbin.static + '/js/vendor/codemirror5/mode/clojure/clojure.js', ready);
-      },
-      handler: throttle(debounceAsync(function (source, resolve, reject, done) {
-        $.ajax({
-          type: 'post',
-          url: 'http://himera-emh.herokuapp.com/compile-string',
-          //url: "http://192.168.100.128:8080/compile-string",
-          contentType: "application/clojure",
-          data: "{ :expr \"(let [] (ns cljs.user) " + source.replace(/"/g, "\\\"") + ")\" }",
-          success: function (data) {
-            var readstring = cljs.reader.read_string(data);
-            var result = (new cljs.core.Keyword("\uFDD0:js")).call(null, readstring);
-            var clojureError = (new cljs.core.Keyword("\uFDD0:error")).call(null, readstring);
-            if (!clojureError) {
-              resolve(result);
-            } else {
-              var clojureErrors = {
-                line: 0,
-                ch: 0,
-                msg: clojureError
-              };
-              console.log("clojureErrors", clojureErrors);
-              reject([clojureErrors]);
-            }
-          },
-          error: function (data) {
-            var clojureErrors2 = {
-              line: 0,
-              ch: 0,
-              msg: data.responseText
-            };
-            console.log("clojureErrors", clojureErrors2);
-            reject([clojureErrors2]);
-          },
-          complete: done
-        });
-      }), 500),
-    }),
+    clojurescript: (function() {
 
+      var worker, resolveWorker;
+
+      function workerMsgHandler() {
+        window.addEventListener('message', function(event) {
+          var message = JSON.parse(event.data);
+
+          if (message.type === 'eval') {
+            jsbin_cljs.core.eval(
+              '(ns cljs.user)' + message.source,
+              function(err, result) {
+                cljs.user = null;
+                if (err) {
+                  throw Error(err);
+                } else {
+                  parent.postMessage(JSON.stringify({
+                    type: 'eval',
+                    result: '"' + result + '"'
+                  }), '*');
+                }
+              });
+          }
+        }, false);
+      }
+
+      window.addEventListener('message', function(event) {
+        var message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+
+        if (message.type === 'eval') {
+          resolveWorker('console.log('+message.result+')');
+        }
+      }, false);
+
+      return createProcessor({
+        id: 'clojurescript',
+        target: 'js',
+        extensions: ['clj', 'cljs'],
+        url: jsbin.static + '/js/vendor/cljs.js',
+        init: function clojurescript(ready) {
+
+          /* Create sandbox */
+          worker = document.createElement('iframe');
+          worker.sandbox = 'allow-same-origin allow-scripts';
+          worker.name = '<cljs>';
+
+          worker.onload = function() {
+            /* Init CLJS context */
+            worker.contentWindow.jsbin_cljs = jsbin_cljs;
+            worker.contentWindow.cljs = cljs;
+            worker.contentWindow.goog = goog;
+
+            var initilizer = worker.contentWindow.document.createElement('script')
+            initilizer.textContent = '('+workerMsgHandler.toString().split('\n').join('')+')()';
+            worker.contentWindow.document.body.appendChild(initilizer);
+
+            getScript(jsbin.static + '/js/vendor/codemirror5/mode/clojure/clojure.js', ready);
+          };
+
+          document.body.appendChild(worker);
+        },
+        handler: function (source, resolve, reject) {
+          try {
+            resolveWorker = resolve;
+            worker.contentWindow.postMessage(JSON.stringify({
+              type: 'eval',
+              source: source
+            }), '*');
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      })
+    })(),
 
     traceur: (function () {
       var SourceMapConsumer,
