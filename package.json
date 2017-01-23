@@ -6,7 +6,7 @@
       "web": "http://remysharp.com"
     }
   ],
-  "name": "jsbin",
+  "name": "@zambezi/jsbin",
   "description": "Collaborative JavaScript Debugging App",
   "main": "./lib/app",
   "version": "3.40.3",
