@@ -76,9 +76,7 @@
     "underscore": "~1.4.4",
     "uuid": "^2.0.1",
     "validate-vat": "^0.3.2",
-    "validator": "^3.16.1"
-  },
-  "devDependencies": {
+    "validator": "^3.16.1",
     "glob": "^7.0.5",
     "grunt": "~0.4.1",
     "grunt-cli": "~0.1.11",
